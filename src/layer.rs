@@ -47,4 +47,16 @@ impl Layer {
     pub fn inputs(&self) -> &Array2<f64> {
         self.inputs.as_ref().expect("No input set. Make sure to call `forward` first.")
     }
+
+    pub fn dweights(&self) -> &Array2<f64> {
+        self.dweights.as_ref().expect("dweights not yet set. Make sure to call `backward` first.")
+    }
+
+    pub fn dbiases(&self) -> &Array1<f64> {
+        self.dbiases.as_ref().expect("dbiases not yet set. Make sure to call `backward` first.")
+    }
+
+    pub fn dinputs(&self) -> &Array2<f64> {
+        self.dinputs.as_ref().expect("dbdinputsiases not yet set. Make sure to call `backward` first.")
+    }
 }

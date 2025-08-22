@@ -21,3 +21,7 @@ RustNN was created as a personal project by a senior data science student aiming
 - Gain an in-depth understanding of neural networks by building them from scratch
 
 - Showcase practical Rust coding skills and neural network knowledge
+
+__Disclaimer:__
+
+This project is inspired by [_Neural Networks from Scratch_](https://nnfs.io/) by Harrison Kinsley & Daniel Kukieła. The implementation is written in Rust and follows the concepts and structure from the book, but all code is original and adapted for Rust.
