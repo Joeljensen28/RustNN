@@ -25,23 +25,32 @@ fn main() {
     let mut loss_activation = SoftmaxCategoricalCrossEntropy::new();
     let optimizer = SGD::new(1.0);
 
+    let mut acc = f64::MIN;
+    let mut loss = f64::MAX;
+
     for _epoch in 0..10001 {
         dense1.forward(&x);
         activation1.forward(&dense1.outputs);
         dense2.forward(activation1.outputs());
-        let loss = loss_activation.forward_sparse(&dense2.outputs, &y);
-        println!("Loss: {}\n", loss);
+        loss = loss_activation.forward_sparse(&dense2.outputs, &y);
 
-        let accuracy = accuracy(loss_activation.outputs(), &y);
-        println!("Accuracy: {}\n", accuracy);
+        acc = accuracy(loss_activation.outputs(), &y);
+
+        if _epoch % 100 == 0 {
+            println!("epoch: {}", _epoch);
+            println!("accuracy: {}", &acc);
+            println!("loss: {}\n", &loss);
+        }
 
         loss_activation.backward_sparse(&loss_activation.outputs().clone(), &y);
         dense2.backward(loss_activation.dinputs());
         activation1.backward(dense2.dinputs());
         dense1.backward(activation1.dinputs());
 
-        optimizer.update_params(dense1); // <--\
-                                                //     --------- These are swallowing the layers making the loop not work. Figure out how to update layer params without swallowing layers.
-        optimizer.update_params(dense2); // <--/
+        optimizer.update_params(&mut dense1);
+        optimizer.update_params(&mut dense2);
     }
+    println!("final accuracy: {}", acc);
+    println!("final loss: {}", loss);
+
 }
