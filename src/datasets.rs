@@ -3,14 +3,7 @@
 use ndarray::{Array1, Array2};
 use rand::thread_rng;
 use rand_distr::{Distribution, Normal};
-
-fn linspace(start: f64, stop: f64, num: usize) -> Vec<f64> {
-    if num < 2 {
-        return vec![stop];
-    }
-    let step = (stop - start) / (num - 1) as f64;
-    (0..num).map(|i| start + step * i as f64).collect()
-}
+use crate::utils::linspace;
 
 pub fn spiral_data(samples: usize, classes: usize) -> (Array2<f64>, Array1<usize>) {
     let total = samples * classes;

@@ -2,7 +2,7 @@
 
 use ndarray::{Array1, Array2, Axis};
 
-fn linspace(start: f64, stop: f64, num: usize) -> Vec<f64> {
+pub fn linspace(start: f64, stop: f64, num: usize) -> Vec<f64> {
     if num < 2 {
         return vec![stop];
     }
