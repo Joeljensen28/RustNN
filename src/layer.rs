@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use ndarray::{Array, Array1, Array2, Axis};
+use ndarray::{Array1, Array2, Axis};
 use ndarray_rand::RandomExt;
 use rand_distr::StandardNormal;
 
@@ -12,7 +12,10 @@ pub struct Layer {
     pub inputs: Option<Array2<f64>>,
     pub dweights: Option<Array2<f64>>,
     pub dbiases: Option<Array1<f64>>,
-    pub dinputs: Option<Array2<f64>>
+    pub dinputs: Option<Array2<f64>>,
+
+    pub weight_momentums: Option<Array2<f64>>,
+    pub bias_momentums: Option<Array1<f64>>
 }
 
 impl Layer {
@@ -28,7 +31,9 @@ impl Layer {
             inputs: None, 
             dweights: None, 
             dbiases: None, 
-            dinputs: None 
+            dinputs: None,
+            weight_momentums: None,
+            bias_momentums: None
         }
     }
 
@@ -57,6 +62,14 @@ impl Layer {
     }
 
     pub fn dinputs(&self) -> &Array2<f64> {
-        self.dinputs.as_ref().expect("dbdinputsiases not yet set. Make sure to call `backward` first.")
+        self.dinputs.as_ref().expect("dbdinputs not yet set. Make sure to call `backward` first.")
+    }
+
+    pub fn weight_momentums(&self) -> &Array2<f64> {
+        self.weight_momentums.as_ref().expect("weights_momentum not yet set. Make sure to update layer params first.")
+    }
+
+    pub fn bias_momentums(&self) -> &Array1<f64> {
+        self.bias_momentums.as_ref().expect("bias_momentum not yet set. Make sure to update layer params first.")
     }
 }

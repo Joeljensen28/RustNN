@@ -24,7 +24,7 @@ fn main() {
     let mut activation1 = ReLU::new();
     let mut dense2 = Layer::new(64, 3, batch_size);
     let mut loss_activation = SoftmaxCategoricalCrossEntropy::new();
-    let mut optimizer = SGD::new(1.0, 1e-3);
+    let mut optimizer = SGD::new(1.0, 1e-3, 0.9);
 
     let mut loss = f64::MAX;
     let mut acc = f64::MIN;
@@ -40,7 +40,7 @@ fn main() {
             println!("epoch: {}", _epoch);
             println!("acc: {}", acc);
             println!("loss: {}", loss);
-            println!("lr: {}", optimizer.current_learning_rate);
+            println!("lr: {}\n", optimizer.current_learning_rate);
         }
 
         loss_activation.backward_sparse(&loss_activation.outputs().clone(), &y);
