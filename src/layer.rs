@@ -15,7 +15,10 @@ pub struct Layer {
     pub dinputs: Option<Array2<f64>>,
 
     pub weight_momentums: Option<Array2<f64>>,
-    pub bias_momentums: Option<Array1<f64>>
+    pub bias_momentums: Option<Array1<f64>>,
+
+    pub weight_cache: Option<Array2<f64>>,
+    pub bias_cache: Option<Array1<f64>>
 }
 
 impl Layer {
@@ -33,7 +36,9 @@ impl Layer {
             dbiases: None, 
             dinputs: None,
             weight_momentums: None,
-            bias_momentums: None
+            bias_momentums: None,
+            weight_cache: None,
+            bias_cache: None
         }
     }
 

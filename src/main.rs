@@ -13,7 +13,7 @@ use ndarray::{Array2, Array1, array, Axis, s};
 use ndarray_rand::RandomExt;
 
 use crate::{
-    activations::{ReLU, Softmax}, datasets::{spiral_data, vertical_data}, layer::Layer, loss_functions::{CategoricalCrossEntropy, SoftmaxCategoricalCrossEntropy}, optimizers::SGD, utils::{accuracy, diagflat}
+    activations::{ReLU, Softmax}, datasets::{spiral_data, vertical_data}, layer::Layer, loss_functions::{CategoricalCrossEntropy, SoftmaxCategoricalCrossEntropy}, optimizers::{AdaGrad, SGD}, utils::{accuracy, diagflat}
 };
 
 fn main() {
@@ -24,10 +24,10 @@ fn main() {
     let mut activation1 = ReLU::new();
     let mut dense2 = Layer::new(64, 3, batch_size);
     let mut loss_activation = SoftmaxCategoricalCrossEntropy::new();
-    let mut optimizer = SGD::new(1.0, 1e-3, 0.9);
+    let mut optimizer = AdaGrad::new(1.0, 1e-4);
 
-    let mut loss = f64::MAX;
-    let mut acc = f64::MIN;
+    let mut loss;
+    let mut acc;
 
     for _epoch in 0..10001 {
         dense1.forward(&x);
