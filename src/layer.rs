@@ -77,4 +77,12 @@ impl Layer {
     pub fn bias_momentums(&self) -> &Array1<f64> {
         self.bias_momentums.as_ref().expect("bias_momentum not yet set. Make sure to update layer params first.")
     }
+
+    pub fn weight_cache(&self) -> &Array2<f64> {
+        self.weight_cache.as_ref().expect("weight_cache not yet set. Make sure to update layer params with a weight-caching optimizer first.")
+    }
+
+    pub fn bias_cache(&self) -> &Array1<f64> {
+        self.bias_cache.as_ref().expect("bias_cache not yet set. Make sure to update layer params with a weight-caching optimizer first.")
+    }
 }

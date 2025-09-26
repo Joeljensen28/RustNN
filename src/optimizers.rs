@@ -1,4 +1,4 @@
-use std::f64::EPSILON;
+use std::{collections::HashMap, f64::EPSILON};
 
 use ndarray::{Array1, Array2};
 
@@ -163,5 +163,90 @@ impl RMSProp {
 
     pub fn post_update_params(&mut self) {
         self.iterations += 1;
+    }
+}
+
+pub struct Adam {
+    learning_rate: f64,
+    current_learning_rate: f64,
+    decay: f64,
+    iterations: i64,
+    epsilon: f64,
+    beta_1: f64,
+    beta_2: f64
+}
+
+impl Adam {
+    pub fn new() -> Self {
+        Adam {
+            learning_rate: 0.001,
+            current_learning_rate: 0.001,
+            decay: 0.0,
+            iterations: 0,
+            epsilon: 1e-7,
+            beta_1: 0.9,
+            beta_2: 0.999
+        }
+    }
+
+    pub fn pre_update_params(&mut self) {
+        if self.decay != 0.0 {
+            self.current_learning_rate = self.learning_rate * (
+                1.0 / (1.0 + self.decay * (self.iterations as f64))
+            );
+        }
+    }
+
+    pub fn update_params(&mut self, layer: &mut Layer) {
+        if layer.weight_cache.is_none() {
+            layer.weight_momentums = Some(Array2::zeros(layer.weights.dim()));
+            layer.weight_cache = Some(Array2::zeros(layer.weights.dim()));
+            layer.bias_momentums = Some(Array1::zeros(layer.biases.dim()));
+            layer.bias_cache = Some(Array1::zeros(layer.biases.dim()));
+        }
+
+        layer.weight_momentums = Some(self.beta_1 * layer.weight_momentums() + (1.0 - self.beta_1) * layer.dweights());
+        layer.bias_momentums = Some(self.beta_1 * layer.bias_momentums() + (1.0 - self.beta_1) * layer.dbiases());
+
+        let weight_momentums_corrected 
+            = layer.weight_momentums() / (1.0 - self.beta_1.powi(self.iterations as i32 + 1));
+        let bias_momentums_corrected
+            = layer.bias_momentums() / (1.0 - self.beta_1.powi(self.iterations as i32 + 1));
+        
+        layer.weight_cache = Some(
+            self.beta_2 * layer.weight_cache() + (1.0 - self.beta_2) * layer.dweights().mapv(|x| x.powi(2))
+        );
+        layer.bias_cache = Some(
+            self.beta_2 * layer.bias_cache() + (1.0 - self.beta_2) * layer.dbiases().mapv(|x| x.powi(2))
+        );
+
+        let weight_cache_corrected 
+            = layer.weight_cache() / (1.0 - self.beta_2.powi(self.iterations as i32 + 1));
+        let bias_cahce_corrected
+            = layer.bias_cache() / (1.0 - self.beta_2.powi(self.iterations as i32 + 1));
+
+        layer.weights += 
+            &(-self.current_learning_rate * weight_momentums_corrected / 
+            (weight_cache_corrected.mapv(|x| x.sqrt()) + self.epsilon));
+        layer.biases +=
+            &(-self.current_learning_rate * bias_momentums_corrected / 
+            (bias_cahce_corrected.mapv(|x| x.sqrt()) + self.epsilon));
+    }
+
+    pub fn post_update_params(&mut self) {
+        self.iterations += 1;
+    }
+
+    pub fn set_hyperparams(&mut self, hyperparams: HashMap<&str, f64>) {
+        for (key, value) in hyperparams {
+            match key {
+                "learning_rate" => self.learning_rate = value,
+                "decay" => self.decay = value,
+                "epsilon" => self.epsilon = value,
+                "beta_1" => self.beta_1 = value,
+                "beta_2" => self.beta_2 = value,
+                _ => panic!("Invalid hyperparamter \"{}\" passed.", key)
+            }
+        }
     }
 }
