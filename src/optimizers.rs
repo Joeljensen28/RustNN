@@ -13,13 +13,13 @@ pub struct SGD {
 }
 
 impl SGD {
-    pub fn new(learning_rate: f64, decay: f64, momentum: f64) -> Self {
+    pub fn new() -> Self {
         SGD{ 
-            learning_rate: learning_rate,
-            decay: decay,
-            current_learning_rate: learning_rate,
+            learning_rate: 1.0,
+            decay: 0.0,
+            current_learning_rate: 1.0,
             iterations: 0,
-            momentum: momentum
+            momentum: 0.0
         }
     }
 
@@ -62,6 +62,19 @@ impl SGD {
     pub fn post_update_params(&mut self) {
         self.iterations += 1;
     }
+
+    pub fn set_hyperparams(&mut self, hyperparams: HashMap<&str, f64>) {
+        for (key, value) in hyperparams {
+            match key {
+                "learning_rate" => self.learning_rate = value,
+                "decay" => self.decay = value,
+                "momentum" => self.momentum = value,
+                _ => panic!(
+                        "Invalid hyperparamter \"{}\" passed.\nValid hyperparameters:\n\tlearning_rate,\n\tdecay,\n\tmomentum", key
+                    )
+            }
+        }
+    }
 }
 
 pub struct AdaGrad {
@@ -73,13 +86,13 @@ pub struct AdaGrad {
 }
 
 impl AdaGrad {
-    pub fn new(learning_rate: f64, decay: f64, epsilon: f64) -> Self {
+    pub fn new() -> Self {
         AdaGrad { 
-            learning_rate: learning_rate,
-            decay: decay,
-            current_learning_rate: learning_rate,
+            learning_rate: 1.0,
+            decay: 0.0,
+            current_learning_rate: 1.0,
             iterations: 0,
-            epsilon: epsilon
+            epsilon: 1e-7
         }
     }
 
@@ -113,6 +126,19 @@ impl AdaGrad {
     pub fn post_update_params(&mut self) {
         self.iterations += 1;
     }
+
+    pub fn set_hyperparams(&mut self, hyperparams: HashMap<&str, f64>) {
+        for (key, value) in hyperparams {
+            match key {
+                "learning_rate" => self.learning_rate = value,
+                "decay" => self.decay = value,
+                "epsilon" => self.epsilon = value,
+                _ => panic!(
+                        "Invalid hyperparamter \"{}\" passed.\nValid hyperparameters:\n\tlearning_rate,\n\tdecay,\n\tepsilon", key
+                    )
+            }
+        }
+    }
 }
 
 pub struct RMSProp {
@@ -125,14 +151,14 @@ pub struct RMSProp {
 }
 
 impl RMSProp {
-    pub fn new(learning_rate: f64, decay: f64, epsilon: f64, rho: f64) -> Self {
+    pub fn new() -> Self {
         RMSProp {
-            learning_rate: learning_rate,
-            decay: decay,
+            learning_rate: 0.001,
+            decay: 0.0,
             iterations: 0,
-            current_learning_rate: learning_rate,
-            epsilon: epsilon,
-            rho: rho
+            current_learning_rate: 0.001,
+            epsilon: 1e-7,
+            rho: 0.9
         }
     }
 
@@ -164,16 +190,30 @@ impl RMSProp {
     pub fn post_update_params(&mut self) {
         self.iterations += 1;
     }
+
+    pub fn set_hyperparams(&mut self, hyperparams: HashMap<&str, f64>) {
+        for (key, value) in hyperparams {
+            match key {
+                "learning_rate" => self.learning_rate = value,
+                "decay" => self.decay = value,
+                "epsilon" => self.epsilon = value,
+                "rho" => self.rho = value,
+                _ => panic!(
+                        "Invalid hyperparamter \"{}\" passed.\nValid hyperparameters:\n\tlearning_rate,\n\tdecay,\n\tepsilon,\n\trho", key
+                    )
+            }
+        }
+    }
 }
 
 pub struct Adam {
-    learning_rate: f64,
-    current_learning_rate: f64,
-    decay: f64,
-    iterations: i64,
-    epsilon: f64,
-    beta_1: f64,
-    beta_2: f64
+    pub learning_rate: f64,
+    pub current_learning_rate: f64,
+    pub decay: f64,
+    pub iterations: i64,
+    pub epsilon: f64,
+    pub beta_1: f64,
+    pub beta_2: f64
 }
 
 impl Adam {
@@ -245,7 +285,9 @@ impl Adam {
                 "epsilon" => self.epsilon = value,
                 "beta_1" => self.beta_1 = value,
                 "beta_2" => self.beta_2 = value,
-                _ => panic!("Invalid hyperparamter \"{}\" passed.", key)
+                _ => panic!(
+                        "Invalid hyperparamter \"{}\" passed.\n\nValid hyperparameters:\n\tlearning_rate,\n\tdecay,\n\tepsilon,\n\tbeta_1,\n\tbeta_2", key
+                    )
             }
         }
     }
