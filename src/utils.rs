@@ -2,6 +2,16 @@
 
 use ndarray::{Array1, Array2, Axis};
 
+pub enum Arrayf64<'a> {
+    Array1(&'a Array1<f64>),
+    Array2(&'a Array2<f64>)
+}
+
+pub enum Arrayusize<'a> {
+    Array1(&'a Array1<usize>),
+    Array2(&'a Array2<usize>)
+}
+
 pub fn linspace(start: f64, stop: f64, num: usize) -> Vec<f64> {
     if num < 2 {
         return vec![stop];
@@ -56,7 +66,7 @@ pub fn to_sparse(one_hot: &Array2<usize>) -> Array1<usize> {
             .collect()
     }
 
-pub fn to_one_hot(sparse: Array1<usize>, n_classes: usize) -> Array2<usize> {
+pub fn to_one_hot(sparse: &Array1<usize>, n_classes: usize) -> Array2<usize> {
     let n_samples = sparse.len();
 
     Array2::from_shape_fn((n_samples, n_classes), |(i, j)| {

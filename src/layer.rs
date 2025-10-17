@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 
-use ndarray::{Array1, Array2, Axis};
+use std::collections::HashMap;
+
+use ndarray::{Array1, Array2, Axis, Array};
 use ndarray_rand::RandomExt;
 use rand_distr::StandardNormal;
 
@@ -18,7 +20,12 @@ pub struct Layer {
     pub bias_momentums: Option<Array1<f64>>,
 
     pub weight_cache: Option<Array2<f64>>,
-    pub bias_cache: Option<Array1<f64>>
+    pub bias_cache: Option<Array1<f64>>,
+
+    pub weight_regularizer_l1: f64,
+    pub weight_regularizer_l2: f64,
+    pub bias_regularizer_l1: f64,
+    pub bias_regularizer_l2: f64
 }
 
 impl Layer {
@@ -38,7 +45,11 @@ impl Layer {
             weight_momentums: None,
             bias_momentums: None,
             weight_cache: None,
-            bias_cache: None
+            bias_cache: None,
+            weight_regularizer_l1: 0.0,
+            weight_regularizer_l2: 0.0,
+            bias_regularizer_l1: 0.0,
+            bias_regularizer_l2: 0.0
         }
     }
 
@@ -51,6 +62,37 @@ impl Layer {
         let x = self.inputs.as_ref().expect("No input set. Call `forward` before `backward`.");
         self.dweights = Some(x.t().dot(dvalues));
         self.dbiases = Some(dvalues.sum_axis(Axis(0)));
+
+        if self.weight_regularizer_l1 > 0.0 {
+            let mut dl1: Array2<f64> = Array::ones(self.weights.dim());
+            dl1.zip_mut_with(
+                &self.weights, 
+                |dl1_v, &weight| if weight < 0.0 { *dl1_v = -1.0 }
+            );
+            let dweights = self.dweights.as_ref().expect("dweights unexpectedly empty.");
+            self.dweights = Some(dweights + (self.weight_regularizer_l1 * dl1));
+        }
+
+        if self.weight_regularizer_l2 > 0.0 {
+            let dweights = self.dweights.as_ref().expect("dweights unexpectedly empty.");
+            self.dweights = Some(dweights + (2.0 * &self.weight_regularizer_l2 * &self.weights));
+        }
+
+        if self.bias_regularizer_l1 > 0.0 {
+            let mut dl1: Array1<f64> = Array::ones(self.biases.dim());
+            dl1.zip_mut_with(
+                &self.biases, 
+                |dl1_v, &bias| if bias < 0.0 { *dl1_v = -1.0 }
+            );
+            let dbiases = self.dbiases.as_ref().expect("dbiases unexpectedly empty.");
+            self.dbiases = Some(dbiases + (self.bias_regularizer_l1 * dl1));
+        }
+
+        if self.bias_regularizer_l2 > 0.0 {
+            let dbiases = self.dbiases.as_ref().expect("dbiases unexpectedly empty.");
+            self.dbiases = Some(dbiases + (2.0 * &self.bias_regularizer_l2 * &self.biases));
+        }
+
         self.dinputs = Some(dvalues.dot(&self.weights.t()));
     }
 
@@ -84,5 +126,20 @@ impl Layer {
 
     pub fn bias_cache(&self) -> &Array1<f64> {
         self.bias_cache.as_ref().expect("bias_cache not yet set. Make sure to update layer params with a weight-caching optimizer first.")
+    }
+
+    pub fn set_regularizers(&mut self, regs: HashMap<&str, f64>) {
+        for (key, value) in regs {
+            match key {
+                "weight_l1" => self.weight_regularizer_l1 = value,
+                "weight_l2" => self.weight_regularizer_l2 = value,
+                "bias_l1" => self.bias_regularizer_l1 = value,
+                "bias_l2" => self.bias_regularizer_l2 = value,
+                _ => panic!(
+                        "Invalid hyperparamter \"{}\" passed.
+                        Valid hyperparameters:\n\tweight_l1,\n\tweight_l2,\n\tbias_l1,\n\tbias_l2", key
+                    )
+            }
+        }
     }
 }
