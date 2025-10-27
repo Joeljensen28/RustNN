@@ -3,13 +3,13 @@
 use ndarray::{Array, Array1, Array2, Axis, Zip};
 use ndarray_linalg::InnerProduct;
 
-use crate::{activations::Softmax, utils::{clip, to_one_hot, to_sparse, Arrayf64, Arrayusize}, layer::Layer};
+use crate::{activations::Softmax, utils::{clip, to_one_hot, to_sparse, Arrayusize}, layers::Dense};
 
 // TODO: Use traits and enums to clean up this mess. Especially use enums for the forward functions so there doesn't have 
 // to be a "forward_sparse" and "forward_one_hot"....
 
 pub trait Loss {
-    fn regularization_loss(&self, layer: &Layer) -> f64 {
+    fn regularization_loss(&self, layer: &Dense) -> f64 {
         let mut regularization_loss = 0.0;
         if layer.weight_regularizer_l1 > 0.0 {
             regularization_loss += &(layer.weight_regularizer_l1 * layer.weights.mapv(|x| x.abs()).sum());

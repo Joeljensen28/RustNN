@@ -1,4 +1,4 @@
-mod layer;
+mod layers;
 mod utils;
 mod activations;
 mod loss_functions;
@@ -16,28 +16,29 @@ use ndarray_rand::RandomExt;
 use crate::{
     activations::{ReLU, Softmax}, 
     datasets::{spiral_data, vertical_data}, 
-    layer::Layer, 
+    layers::{Dense, Dropout}, 
     loss_functions::{CategoricalCrossEntropy, Loss, SoftmaxCategoricalCrossEntropy}, 
     optimizers::{AdaGrad, Adam, RMSProp, SGD}, 
     utils::{accuracy, diagflat, Arrayusize}
 };
 
 fn main() {
-    let (x, y) = spiral_data(100, 3);
+    let (x, y) = spiral_data(1000, 3);
     let batch_size = x.dim().0;
     
-    let mut dense1 = Layer::new(2, 64, batch_size);
+    let mut dense1 = Dense::new(2, 512, batch_size);
     dense1.set_regularizers(hashmap! {
         "weight_l2" => 5e-4,
         "bias_l2" => 5e-4
     });
     let mut activation1 = ReLU::new();
-    let mut dense2 = Layer::new(64, 3, batch_size);
+    let mut dropout1 = Dropout::new(0.1);
+    let mut dense2 = Dense::new(512, 3, batch_size);
     let mut loss_activation = SoftmaxCategoricalCrossEntropy::new();
     let mut optimizer = Adam::new();
     optimizer.set_hyperparams(hashmap! {
-        "learning_rate" => 0.02,
-        "decay" => 5e-7
+        "learning_rate" => 0.05,
+        "decay" => 5e-5
     });
 
     let mut data_loss;
@@ -48,7 +49,8 @@ fn main() {
     for _epoch in 0..10001 {
         dense1.forward(&x);
         activation1.forward(&dense1.outputs);
-        dense2.forward(activation1.outputs());
+        dropout1.forward(activation1.outputs());
+        dense2.forward(dropout1.outputs());
         data_loss = loss_activation.forward(&dense2.outputs, Arrayusize::Array1(&y));
         reg_loss = loss_activation.fn_loss.regularization_loss(
             &dense1) + loss_activation.fn_loss.regularization_loss(&dense2
@@ -67,7 +69,8 @@ fn main() {
 
         loss_activation.backward(&loss_activation.outputs().clone(), Arrayusize::Array1(&y));
         dense2.backward(loss_activation.dinputs());
-        activation1.backward(dense2.dinputs());
+        dropout1.backward(dense2.dinputs());
+        activation1.backward(dropout1.dinputs());
         dense1.backward(activation1.dinputs());
 
         optimizer.pre_update_params();

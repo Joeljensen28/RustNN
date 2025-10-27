@@ -2,7 +2,7 @@ use std::{collections::HashMap, f64::EPSILON};
 
 use ndarray::{Array1, Array2};
 
-use crate::layer::Layer;
+use crate::layers::Dense;
 
 pub struct SGD {
     pub learning_rate: f64,
@@ -31,7 +31,7 @@ impl SGD {
         }
     }
 
-    pub fn update_params(&self, layer: &mut Layer) {
+    pub fn update_params(&self, layer: &mut Dense) {
         let weight_updates;
         let bias_updates;
 
@@ -104,7 +104,7 @@ impl AdaGrad {
         }
     }
 
-    pub fn update_params(&self, layer: &mut Layer) {
+    pub fn update_params(&self, layer: &mut Dense) {
         if layer.weight_cache.is_none() {
             layer.weight_cache = Some(Array2::zeros(layer.weights.dim()));
             layer.bias_cache = Some(Array1::zeros(layer.biases.dim()))
@@ -170,7 +170,7 @@ impl RMSProp {
         }
     }
 
-    pub fn update_params(&mut self, layer: &mut Layer) {
+    pub fn update_params(&mut self, layer: &mut Dense) {
         if layer.weight_cache.is_none() {
             layer.weight_cache = Some(Array2::zeros(layer.weights.dim()));
             layer.bias_cache = Some(Array1::zeros(layer.biases.dim()))
@@ -237,7 +237,7 @@ impl Adam {
         }
     }
 
-    pub fn update_params(&mut self, layer: &mut Layer) {
+    pub fn update_params(&mut self, layer: &mut Dense) {
         if layer.weight_cache.is_none() {
             layer.weight_momentums = Some(Array2::zeros(layer.weights.dim()));
             layer.weight_cache = Some(Array2::zeros(layer.weights.dim()));

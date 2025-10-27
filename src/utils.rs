@@ -1,6 +1,10 @@
 #![allow(dead_code)]
 
-use ndarray::{Array1, Array2, Axis};
+use std::os::unix::thread;
+
+use ndarray::{Array, Array1, Array2, Axis, Dimension, IxDyn, IntoDimension};
+use rand_distr::{Binomial, Distribution};
+use::rand::thread_rng;
 
 pub enum Arrayf64<'a> {
     Array1(&'a Array1<f64>),
@@ -76,4 +80,17 @@ pub fn to_one_hot(sparse: &Array1<usize>, n_classes: usize) -> Array2<usize> {
 
 pub fn diagflat(a: &Array2<f64>) -> Array2<f64> {
     Array2::eye(a.dim().0) * a
+}
+
+pub fn binomial<D>(n: u64, p: f64, size: D) -> Array<f64, D::Dim> 
+where 
+    D: IntoDimension,
+{
+    let dim = size.into_dimension();
+    let dist = Binomial::new(n, p).expect("Invalid binomial parameters.");
+    let mut rng = thread_rng();
+    let data = (0..dim.size())
+        .map(|_| dist.sample(&mut rng) as f64)
+        .collect::<Vec<f64>>();
+    Array::from_shape_vec(dim, data).expect("Shape mismatch.")
 }
