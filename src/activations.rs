@@ -3,8 +3,9 @@
 use core::f64;
 
 use ndarray::{Array2, Axis};
+use rand_distr::Exp;
 
-use crate::utils::diagflat;
+use crate::utils::{diagflat, exp};
 
 pub struct ReLU {
     pub outputs: Option<Array2<f64>>,
@@ -98,5 +99,40 @@ impl Softmax {
 
     pub fn outputs(&self) -> &Array2<f64> {
         self.outputs.as_ref().expect("No output set. Make sure to call `forward` first.")
+    }
+}
+
+pub struct Sigmoid {
+    inputs: Option<Array2<f64>>,
+    output: Option<Array2<f64>>,
+    dinputs: Option<Array2<f64>>
+}
+
+impl Sigmoid {
+    pub fn new() -> Self {
+        Sigmoid { 
+            inputs: None, 
+            output: None, 
+            dinputs: None 
+        }
+    }
+
+    pub fn forward(&mut self, inputs: &Array2<f64>) {
+        self.inputs = Some(inputs.clone());
+        self.output = Some(1.0 / (1.0 + exp(&-inputs)))
+    }
+
+    pub fn backward(&mut self, dvalues: &Array2<f64>) {
+        self.dinputs = Some(dvalues * (
+            1.0 - self.output.as_ref().expect("self.output not yet set. be sure to call .forward() first")
+        ) * self.output.as_ref().expect("self.output not yet set. be sure to call .forward() first"))
+    }
+
+    pub fn outputs(&self) -> &Array2<f64> {
+        self.output.as_ref().expect("No output set. Make sure to call `forward` first.")
+    }
+
+    pub fn dinputs(&self) -> &Array2<f64> {
+        self.dinputs.as_ref().expect("dinputs not yet set. Make sure to call `.backward()` first.")
     }
 }

@@ -3,7 +3,7 @@
 use ndarray::{Array, Array1, Array2, Axis, Zip};
 use ndarray_linalg::InnerProduct;
 
-use crate::{activations::Softmax, utils::{clip, to_one_hot, to_sparse, Arrayusize}, layers::Dense};
+use crate::{activations::Softmax, utils::{clip, to_one_hot, to_sparse, Arrayusize, log}, layers::Dense};
 
 // TODO: Use traits and enums to clean up this mess. Especially use enums for the forward functions so there doesn't have 
 // to be a "forward_sparse" and "forward_one_hot"....
@@ -39,6 +39,8 @@ pub trait Loss {
     fn forward(&self, y_pred: &Array2<f64>, y_true: Arrayusize) -> Array1<f64>;
 
     fn backward(&mut self, dvalues: &Array2<f64>, y_true: Arrayusize);
+
+    fn dinputs(&self) -> &Array2<f64>;
 
     fn new() -> Self;
 }
@@ -100,6 +102,10 @@ impl Loss for CategoricalCrossEntropy {
         let samples = dvalues.dim().0 as f64;
         let y_true_f64 = y_true.mapv(|x| x as f64);
         self.dinputs = Some((-y_true_f64 / dvalues) / samples);
+    }
+
+    fn dinputs(&self) -> &Array2<f64> {
+        self.dinputs.as_ref().expect("dinputs not yet set. Make sure to call `.forward()` first.")
     }
 }
 
@@ -168,5 +174,62 @@ impl SoftmaxCategoricalCrossEntropy {
 
     pub fn dinputs(&self) -> &Array2<f64> {
         self.dinputs.as_ref().expect("Dinputs unexpectedy empty. Be sure to call `backward` first.")
+    }
+}
+
+pub struct BinaryCrossEntropy {
+    pub dinputs: Option<Array2<f64>>
+}
+
+impl Loss for BinaryCrossEntropy {
+    fn new() -> Self {
+        BinaryCrossEntropy { dinputs: None }
+    }
+
+    fn forward(&self, y_pred: &Array2<f64>, y_true: Arrayusize) -> Array1<f64> {
+        let y_pred_clipped = clip(y_pred, 1e-7, 1.0 - 1e-7);
+
+        let y_true = match y_true {
+            Arrayusize::Array1(_inner) => {
+                panic!("Cannot pass any <2D array) into BinaryCrossEntropy.")
+            }
+            Arrayusize::Array2(inner) => {
+                &inner.mapv(|x| x as f64)
+            }
+        };
+
+        let sample_losses = -(y_true * log(&y_pred_clipped) +
+            (1.0 - y_true) * log(&(1.0 - y_pred_clipped)));
+            
+        let sample_losses = sample_losses
+            .mean_axis(Axis(sample_losses.ndim() - 1))
+            .expect("sample_losses unexpectedly empty and cannot calculate mean.");
+
+        sample_losses
+    }
+
+    fn backward(&mut self, dvalues: &Array2<f64>, y_true: Arrayusize) {
+        let samples = dvalues.len();
+
+        let outputs = dvalues.dim().1;
+
+        let clipped_dvalues = clip(dvalues, 1e-7, 1.0 - 1e-7);
+
+        let y_true = match y_true {
+            Arrayusize::Array1(_inner) => {
+                panic!("Cannot pass any <2D array) into BinaryCrossEntropy.")
+            }
+            Arrayusize::Array2(inner) => {
+                &inner.mapv(|x| x as f64)
+            }
+        };
+
+        self.dinputs = Some(
+            (-(y_true / &clipped_dvalues - (1.0 - y_true) / (1.0 - clipped_dvalues)) / (outputs as f64)) / (samples as f64)
+        );
+    }
+
+    fn dinputs(&self) -> &Array2<f64> {
+        self.dinputs.as_ref().expect("dinputs not yet set. Make sure to call `.backward()` first.")
     }
 }

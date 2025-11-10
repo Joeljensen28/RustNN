@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
-use std::os::unix::thread;
+use std::{f64::consts::E, os::unix::thread};
 
-use ndarray::{Array, Array1, Array2, Axis, Dimension, IxDyn, IntoDimension};
+use ndarray::{Array, Array1, Array2, Axis, Dimension, IntoDimension, IxDyn, Zip};
 use rand_distr::{Binomial, Distribution};
 use::rand::thread_rng;
 
@@ -28,7 +28,7 @@ pub fn clip(a: &Array2<f64>, interval_min: f64, interval_max: f64) -> Array2<f64
     a.mapv(|x| x.clamp(interval_min, interval_max))
 }
 
-pub fn accuracy(y_pred: &Array2<f64>, y_true: &Array1<usize>) -> f64 {
+pub fn accuracy(y_pred: &Array2<f64>, y_true: Array1<usize>) -> f64 {
     let n = y_true.len() as f64;
 
     let pred_classes: Array1<usize> = y_pred
@@ -54,6 +54,14 @@ pub fn accuracy(y_pred: &Array2<f64>, y_true: &Array1<usize>) -> f64 {
         .count();
 
     n_correct as f64 / n
+}
+
+pub fn accuracy_bce(y_pred: &Array2<usize>, y_true: &Array2<usize>) -> f64 {
+    let acc_map = Zip::from(y_pred).and(y_true).map_collect(|yp, yt| {
+        (yp == yt) as usize as f64
+    });
+
+    acc_map.mean().expect("failed to calculate mean")
 }
 
 pub fn to_sparse(one_hot: &Array2<usize>) -> Array1<usize> {
@@ -93,4 +101,18 @@ where
         .map(|_| dist.sample(&mut rng) as f64)
         .collect::<Vec<f64>>();
     Array::from_shape_vec(dim, data).expect("Shape mismatch.")
+}
+
+pub fn exp(inputs: &Array2<f64>) -> Array2<f64> {
+    inputs.mapv(|x| x.exp())
+}
+
+pub fn log(inputs: &Array2<f64>) -> Array2<f64> {
+    inputs.mapv(|x| x.log(E))
+}
+
+pub fn binarize(a: &Array2<f64>, threshold: f64) -> Array2<usize> {
+    a.mapv(|x| {
+        (x > threshold) as usize
+    })
 }
