@@ -1,9 +1,10 @@
 #![allow(dead_code)]
 
-use ndarray::{Array1, Array2};
+use ndarray::{Array1, Array2, Array};
 use rand::thread_rng;
 use rand_distr::{Distribution, Normal};
 use crate::utils::linspace;
+use std::f64::consts::PI;
 
 pub fn spiral_data(samples: usize, classes: usize) -> (Array2<f64>, Array1<usize>) {
     let total = samples * classes;
@@ -58,6 +59,19 @@ pub fn vertical_data(samples: usize, classes: usize) -> (Array2<f64>, Array1<usi
             y[idx] = class_number as usize;
         }
     }
+
+    (x, y)
+}
+
+pub fn sine_data(samples: usize) -> (Array2<f64>, Array2<f64>) {
+    let x = Array::from_iter(
+            (0..samples).map(|i| i as f64 / samples as f64)
+        ).into_shape((samples, 1))
+        .unwrap();
+
+    let y = x.mapv(|v| (2.0 * PI * v).sin())
+        .into_shape((samples, 1))
+        .unwrap();
 
     (x, y)
 }

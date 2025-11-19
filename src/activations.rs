@@ -119,7 +119,7 @@ impl Sigmoid {
 
     pub fn forward(&mut self, inputs: &Array2<f64>) {
         self.inputs = Some(inputs.clone());
-        self.output = Some(1.0 / (1.0 + exp(&-inputs)))
+        self.output = Some(1.0 / (1.0 + exp(&-inputs)));
     }
 
     pub fn backward(&mut self, dvalues: &Array2<f64>) {
@@ -134,5 +134,34 @@ impl Sigmoid {
 
     pub fn dinputs(&self) -> &Array2<f64> {
         self.dinputs.as_ref().expect("dinputs not yet set. Make sure to call `.backward()` first.")
+    }
+}
+
+pub struct Linear {
+    inputs: Option<Array2<f64>>,
+    output: Option<Array2<f64>>,
+    dinputs: Option<Array2<f64>>
+}
+
+impl Linear {
+    pub fn new() -> Self {
+        Linear { inputs: None, output: None, dinputs: None }
+    }
+
+    pub fn forward(&mut self, inputs: &Array2<f64>) {
+        self.inputs = Some(inputs.clone());
+        self.output = Some(inputs.clone());
+    }
+
+    pub fn backward(&mut self, dvalues: &Array2<f64>) {
+        self.dinputs = Some(dvalues.clone());
+    }
+
+    pub fn output(&self) -> &Array2<f64> {
+        self.output.as_ref().expect("output not yet set. Make sure to call `.forward()` first")
+    }
+
+    pub fn dinputs(&self) -> &Array2<f64> {
+        self.dinputs.as_ref().expect("output not yet set. Make sure to call `.forward()` first")
     }
 }

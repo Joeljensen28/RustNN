@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 
 use ndarray::{Array, Array1, Array2, Axis, Zip};
-use ndarray_linalg::InnerProduct;
+use ndarray_linalg::{InnerProduct, Scalar};
 
-use crate::{activations::Softmax, utils::{clip, to_one_hot, to_sparse, Arrayusize, log}, layers::Dense};
+use crate::{activations::Softmax, utils::{clip, to_one_hot, to_sparse, Arrayusize, log, sign}, layers::Dense};
 
 // TODO: Use traits and enums to clean up this mess. Especially use enums for the forward functions so there doesn't have 
 // to be a "forward_sparse" and "forward_one_hot"....
@@ -231,5 +231,92 @@ impl Loss for BinaryCrossEntropy {
 
     fn dinputs(&self) -> &Array2<f64> {
         self.dinputs.as_ref().expect("dinputs not yet set. Make sure to call `.backward()` first.")
+    }
+}
+
+pub struct MeanSquaredError {
+    pub dinputs: Option<Array2<f64>>
+}
+
+impl MeanSquaredError {
+    pub fn new() -> Self {
+        MeanSquaredError { dinputs: None }
+    }
+
+    pub fn regularization_loss(&self, layer: &Dense) -> f64 {
+        let mut regularization_loss = 0.0;
+        if layer.weight_regularizer_l1 > 0.0 {
+            regularization_loss += &(layer.weight_regularizer_l1 * layer.weights.mapv(|x| x.abs()).sum());
+        }
+
+        if layer.weight_regularizer_l2 > 0.0 {
+            regularization_loss += &(layer.weight_regularizer_l2 * (&layer.weights * &layer.weights).sum());
+        }
+
+        if layer.bias_regularizer_l1 > 0.0 {
+            regularization_loss += &(layer.bias_regularizer_l1 * layer.biases.mapv(|x| x.abs()).sum());
+        }
+
+        if layer.bias_regularizer_l2 > 0.0 {
+            regularization_loss += &(layer.bias_regularizer_l2 * (&layer.biases * &layer.biases).sum());
+        }
+
+        regularization_loss
+    }
+
+    pub fn calculate(&self, output: &Array2<f64>, y: &Array2<f64>) -> f64 {
+        let sample_losses = self.forward(output, y);
+        let data_loss = sample_losses.mean().expect("sample_losses.mean() failed. Is the array empty?");
+        data_loss
+    }
+
+    pub fn forward(&self, y_pred: &Array2<f64>, y_true: &Array2<f64>) -> Array1<f64> {
+        let losses = (y_true - y_pred).mapv(
+            |x| x.pow(2.0)
+        );
+
+        losses
+            .axis_iter(Axis(0))
+            .map(|row| row.mean().unwrap())
+            .collect()
+    }
+
+    pub fn backward(&mut self, dvalues: &Array2<f64>, y_true: &Array2<f64>) {
+        let samples = dvalues.len() as f64;
+        let outputs = dvalues.row(0).len()as f64;
+        self.dinputs = Some(
+            (-2.0 * (y_true - dvalues) / outputs) / samples
+        );
+    }
+
+    pub fn dinputs(&self) -> &Array2<f64> {
+        self.dinputs.as_ref().expect("dinputs not yet set. Be sure to call .backward() first")
+    }
+}
+
+pub struct MeanAbsoluteError {
+    dinputs: Option<Array2<f64>>
+}
+
+impl MeanAbsoluteError {
+    pub fn new() -> Self {
+        MeanAbsoluteError { dinputs: None }
+    }
+
+    pub fn forward(&self, y_pred: &Array2<f64>, y_true: &Array2<f64>) -> Array1<f64> {
+        let sample_losses = (y_true - y_pred).mapv(|x| x.abs());
+
+        sample_losses.axis_iter(Axis(0))
+            .map(|row| row.mean().unwrap())
+            .collect()
+    }
+
+    pub fn backward(&mut self, dvalues: Array2<f64>, y_true: &Array2<f64>) {
+        let samples = dvalues.len() as f64;
+        let outputs = dvalues.row(0).len() as f64;
+
+        self.dinputs = Some(
+            (sign(&(y_true - dvalues)) / outputs) / samples
+        );
     }
 }

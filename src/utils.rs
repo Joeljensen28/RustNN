@@ -103,16 +103,43 @@ where
     Array::from_shape_vec(dim, data).expect("Shape mismatch.")
 }
 
-pub fn exp(inputs: &Array2<f64>) -> Array2<f64> {
-    inputs.mapv(|x| x.exp())
+pub fn exp(a: &Array2<f64>) -> Array2<f64> {
+    a.mapv(|x| x.exp())
 }
 
-pub fn log(inputs: &Array2<f64>) -> Array2<f64> {
-    inputs.mapv(|x| x.log(E))
+pub fn log(a: &Array2<f64>) -> Array2<f64> {
+    a.mapv(|x| x.log(E))
 }
 
 pub fn binarize(a: &Array2<f64>, threshold: f64) -> Array2<usize> {
     a.mapv(|x| {
         (x > threshold) as usize
     })
+}
+
+pub fn sign(a: &Array2<f64>) -> Array2<f64> {
+    a.mapv(|x| {if x < 0.0 {-1.0} else if x > 0.0 {1.0} else {0.0}})
+}
+
+pub fn std(a: &Array2<f64>) -> f64 {
+    let n = a.len() as f64;
+    if n < 1.0 {
+        return 0.0
+    }
+
+    let mean = a.mean().expect("Array unexpectedly empty");
+
+    let sum_sq_diff = a.fold(0.0, |acc, &x| {
+        let diff = x - mean;
+        acc + diff * diff
+    });
+
+    (sum_sq_diff / n).sqrt()
+}
+
+pub fn epsilon_accuracy(y_pred: &Array2<f64>, y_true: &Array2<f64>, epsilon: f64) -> f64 {
+    (y_pred - y_true)
+        .mapv(|x| (x.abs() < epsilon) as i64 as f64)
+        .mean()
+        .expect("one or both of y_pred/y_true was unexpectedly empty")
 }
